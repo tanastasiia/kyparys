@@ -8,7 +8,9 @@ import com.google.common.primitives.Longs;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.crypto.Cipher;
+import java.math.BigInteger;
 import java.security.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -111,7 +113,7 @@ public class Kyparys256 {
             R = temp;
         }
 
-        return Arrays.stream(Longs.concat(L, R))
+        return Arrays.stream(Longs.concat(R, L))
                 .mapToObj(i -> String.format("%32s", Long.toBinaryString(i)).replace(' ', '0'))
                 .collect(Collectors.joining());
 
