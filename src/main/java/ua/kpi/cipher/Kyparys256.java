@@ -1,21 +1,15 @@
 package ua.kpi.cipher;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
-import com.google.common.collect.ObjectArrays;
-import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import org.apache.commons.lang3.ArrayUtils;
 
-import javax.crypto.Cipher;
-import java.math.BigInteger;
-import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Kyparys256 {
+
     private final int blockSize = 256;
     private final int keySize = 256;
     private final int wordSize = 32;
@@ -73,7 +67,7 @@ public class Kyparys256 {
             RK[2 * i] = st;
 
             // get odd round key
-            tmv = shiftLeft(tmv, 1);
+            tmv = shiftLeftBits(tmv, 1);
             st = KR;
             KT = add(Ksigma, tmv);
 
@@ -88,14 +82,13 @@ public class Kyparys256 {
             st = add(st, KT);
             RK[2 * i + 1] = st;
 
-            tmv = shiftLeft(tmv, 1);
+            tmv = shiftLeftBits(tmv, 1);
 
-            K = rotlKey1(K);
+            K = rotlKey1Words(K);
 
         }
 
         return RK;
-
 
     }
 
@@ -121,16 +114,15 @@ public class Kyparys256 {
 
     public String decryptBlock(String bitSequence, long[][] roundKeys) {
         ArrayUtils.reverse(roundKeys);
-
         return encryptBlock(bitSequence, roundKeys);
 
     }
 
     private long[] f(long[] L, long[] K) {
-        long P0 = add(L[0], K[0]);
-        long P1 = add(L[1], K[1]);
-        long P2 = add(L[2], K[2]);
-        long P3 = add(L[3], K[3]);
+        long P0 = xor(L[0], K[0]);
+        long P1 = xor(L[1], K[1]);
+        long P2 = xor(L[2], K[2]);
+        long P3 = xor(L[3], K[3]);
 
         var h1 = h(P0, P1, P2, P3);
         return h(h1[0], h1[1], h1[2], h1[3]);
@@ -157,7 +149,11 @@ public class Kyparys256 {
     }
 
     private List<String> split(String sequence) {
-        return Lists.newArrayList(Splitter.fixedLength(8).split(sequence));
+        List<String> res = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            res.add(sequence.substring(i * 32, 32 * i + 32));
+        }
+        return res;
     }
 
     public long rotl(long x, long r) {
@@ -188,7 +184,7 @@ public class Kyparys256 {
         return c;
     }
 
-    private long[] shiftLeft(long[] a, int r) {
+    private long[] shiftLeftBits(long[] a, int r) {
         long[] c = new long[a.length];
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] << r) & mask32;
@@ -196,7 +192,7 @@ public class Kyparys256 {
         return c;
     }
 
-    private long[] rotlKey1(long[] a) {
+    private long[] rotlKey1Words(long[] a) {
         var c = new long[a.length];
         System.arraycopy(a, 1, c, 0, a.length - 1);
         c[c.length - 1] = a[0];
